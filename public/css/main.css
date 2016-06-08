@@ -1,0 +1,17 @@
+.board {
+    width: 1000px;
+    height: 800px;
+}
+.cell {
+    position: absolute;
+    width: 100px;
+    height: 86px;
+    left: 150px;
+    top: 150px;
+}
+.cell>img {
+    position: absolute;
+    max-width: 100%;
+    height: auto;
+    transform-origin: center;
+}

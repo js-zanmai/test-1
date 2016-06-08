@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Document</title>
+<link rel="stylesheet" href="./css/main.css" type="text/css" />
+</head>
+<body>
+    <p>
+        <button id="login" value="Login"></button>
+        User : <span id="user"></span>
+    </p>
+    
+    <div id="board" class="board"></div>
+
+<script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDiTUUJrTf7FdsugoyIfX_eq0NbuTdTrEs",
+    authDomain: "js-zanmai-test-1.firebaseapp.com",
+    databaseURL: "https://js-zanmai-test-1.firebaseio.com",
+    storageBucket: "js-zanmai-test-1.appspot.com",
+  };
+  firebase.initializeApp(config);
+</script>
+
+<script src="./bundle/bundle.js"></script>
+</body>
+</html>

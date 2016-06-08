@@ -1,0 +1,15 @@
+{
+  "name": "js-zanmai-test-1",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "browserify main.js -o public/bundle/bundle.js",
+    "server": "http-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "All Rights Reserved",
+  "devDependencies": {
+    "http-server": "^0.9.0"
+  }
+}
