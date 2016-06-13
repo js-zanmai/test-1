@@ -71,15 +71,15 @@ _.times(boardsize, function (i) {
     });
 });
 
-function addcell(pos, path, selected) {
+function drawcell(pos, path, selected) {
     var cell = $('div#board>div.cell').filter(function() { return $(this).prop('x') === pos.x && $(this).prop('y') === pos.y});
     if (cell.length > 0) {
-        cell.remove('img');
+        cell.empty();
     } else {
         cell = $('<div>').addClass('cell').prop('x', pos.x).prop('y', pos.y);
-        $('div#board').append(cell);
         cell.css('left', 500-50+pos.x*75);
         cell.css('top', 400-43+pos.y*86-(pos.x&1)*43);
+        $('div#board').append(cell);
     }
     if (pos.x === 0 && pos.y === 0) {
         var centerimg = $('<img>').attr('src', cellImageCenter);
@@ -90,8 +90,8 @@ function addcell(pos, path, selected) {
     } else {
         for (var i = 0; i < path.length; i++) {
             var j = path[i];
-            var pathimg = $('<img>');
             if (i < j) {
+                var pathimg = $('<img>');
                 var hl = _.some(selected, function(x) { return x === i || x === j; });
                 var cip = hl ? cellImageSelectedPaths : cellImagePaths;
                 if ((i & 1) === 0) {
@@ -101,8 +101,8 @@ function addcell(pos, path, selected) {
                     pathimg.attr('src', cip[12-j+i]);
                     pathimg.css('transform', 'scaleX(-1) rotate('+(-i*30+30)+'deg)');
                 }
+                cell.append(pathimg);
             }
-            cell.append(pathimg);
         }    
         var frameimg = $('<img>').attr('src', cellImageFrame);
         cell.append(frameimg);
@@ -130,7 +130,7 @@ function randpath() {
 
 /*
 _.each(allpos, function(cell) {
-    addcell(cell, randpath());
+    drawcell(cell, randpath());
 });
 */
 
@@ -157,11 +157,11 @@ function getnextenter(curexit) {
     return [7, 6, 9, 8, 11, 10, 1, 0, 3, 2, 5, 4][curexit];
 }
 
-addcell({x:0, y:0});
+drawcell({x:0, y:0});
 var bpos = {x:0, y:-boardsize-1};
 _([4, 6, 8, 10, 0, 2]).each(function(dir) {
     _.times(boardsize + 1, function(j) {
-        addcell(bpos);
+        drawcell(bpos);
         bpos = getnextpos(bpos, dir);
     });
 });
@@ -173,7 +173,7 @@ var going = true;
 while (going) {
     var path = randpath();
     var selected = [enter];
-    addcell(curpos, path, selected);
+    drawcell(curpos, path, selected);
     cells.push({pos:curpos, path:path, selected:selected});
     while (true) {
         var curexit = path[enter];
@@ -192,7 +192,7 @@ while (going) {
         existing.selected.push(enter);
         curpos = nextpos;
         path = existing.path;
-        addcell(curpos, path, existing.selected);
+        drawcell(curpos, path, existing.selected);
     }
 }
 
