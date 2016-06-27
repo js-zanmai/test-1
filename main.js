@@ -29,9 +29,10 @@ firebase.auth().getRedirectResult().then(function(result) {
     
 });
 
-var cellImageFrame = 'image/frame.png';
 var cellImageCenter = 'image/center.png';
 var cellImageBorder = 'image/border.png';
+var cellImageFrame = 'image/frame.png';
+var cellImageSelectedFrame = 'image/selected.png';
 var cellImagePaths = [
     null,
     'image/n1.png',
@@ -64,35 +65,36 @@ var allpos = [];
 _.times(boardsize, function (i) {
     var pos = {x:0, y:-i-1};
     _([4, 6, 8, 10, 0, 2]).each(function(dir) {
-        _.times(i + 1, function(j) {
+        _.times(i + 1, function() {
             allpos.push(pos);
             pos = getnextpos(pos, dir);
         });
     });
 });
 
-function drawcell(pos, path, selected) {
-    var cell = $('div#board>div.cell').filter(function() { return $(this).prop('x') === pos.x && $(this).prop('y') === pos.y});
-    if (cell.length > 0) {
-        cell.empty();
+function drawcell(cell, selected) {
+    function p() { return $(this).prop('x') === cell.pos.x && $(this).prop('y') === cell.pos.y };
+    var celldiv = $('div#board>div.cell').filter(p);
+    if (celldiv.length > 0) {
+        celldiv.empty();
     } else {
-        cell = $('<div>').addClass('cell').prop('x', pos.x).prop('y', pos.y);
-        cell.css('left', 500-50+pos.x*75);
-        cell.css('top', 400-43+pos.y*86-(pos.x&1)*43);
-        $('div#board').append(cell);
+        celldiv = $('<div>').addClass('cell').prop('x', cell.pos.x).prop('y', cell.pos.y);
+        celldiv.css('left', 500-50+cell.pos.x*75);
+        celldiv.css('top', 400-43+cell.pos.y*86-(cell.pos.x&1)*43);
+        $('div#board').append(celldiv);
     }
-    if (pos.x === 0 && pos.y === 0) {
+    if (cell.pos.x === 0 && cell.pos.y === 0) {
         var centerimg = $('<img>').attr('src', cellImageCenter);
-        cell.append(centerimg);
-    } else if (!inboard(pos)) {
+        celldiv.append(centerimg);
+    } else if (!inboard(cell.pos)) {
         var borderimg = $('<img>').attr('src', cellImageBorder);
-        cell.append(borderimg);
+        celldiv.append(borderimg);
     } else {
-        for (var i = 0; i < path.length; i++) {
-            var j = path[i];
+        for (var i = 0; i < cell.path.length; i++) {
+            var j = cell.path[i];
             if (i < j) {
                 var pathimg = $('<img>');
-                var hl = _.some(selected, function(x) { return x === i || x === j; });
+                var hl = _.some(cell.hlpaths, function(x) { return x === i || x === j; });
                 var cip = hl ? cellImageSelectedPaths : cellImagePaths;
                 if ((i & 1) === 0) {
                     pathimg.attr('src', cip[j-i]);
@@ -101,12 +103,17 @@ function drawcell(pos, path, selected) {
                     pathimg.attr('src', cip[12-j+i]);
                     pathimg.css('transform', 'scaleX(-1) rotate('+(-i*30+30)+'deg)');
                 }
-                cell.append(pathimg);
+                celldiv.append(pathimg);
             }
         }    
-        var frameimg = $('<img>').attr('src', cellImageFrame);
-        cell.append(frameimg);
+        var frameimg = $('<img>').attr('src', selected ? cellImageSelectedFrame : cellImageFrame);
+        celldiv.append(frameimg);
     }
+}
+
+function clearboard() {
+    function p() { return inboard({x:$(this).prop('x'), y:$(this).prop('y')}); }
+    $('div#board>div.cell').filter(p).remove();
 }
 
 function randpath() {
@@ -127,12 +134,6 @@ function randpath() {
     }
     return path;
 }
-
-/*
-_.each(allpos, function(cell) {
-    drawcell(cell, randpath());
-});
-*/
 
 function matchpos(p1, p2) { return p1.x === p2.x && p1.y === p2.y; };
 function inboard(pos) {
@@ -157,43 +158,117 @@ function getnextenter(curexit) {
     return [7, 6, 9, 8, 11, 10, 1, 0, 3, 2, 5, 4][curexit];
 }
 
-drawcell({x:0, y:0});
+drawcell({pos:{x:0, y:0}});
 var bpos = {x:0, y:-boardsize-1};
 _([4, 6, 8, 10, 0, 2]).each(function(dir) {
-    _.times(boardsize + 1, function(j) {
-        drawcell(bpos);
+    _.times(boardsize + 1, function() {
+        drawcell({pos:bpos});
         bpos = getnextpos(bpos, dir);
     });
 });
 
-var curpos = {x:0, y:-1};
-var enter = 7;
 var cells = [];
-var going = true;
-while (going) {
-    var path = randpath();
-    var selected = [enter];
-    drawcell(curpos, path, selected);
-    cells.push({pos:curpos, path:path, selected:selected});
+
+
+function moveforward(cell, enter) {
+    var pos = cell.pos;
+    while (cell) {
+        var exit = cell.path[enter];
+        pos = getnextpos(pos, exit);
+        enter = getnextenter(exit);
+        if (!inboard(pos)) {
+            return null;
+        }
+        cell = _.find(cells, function(c) { return matchpos(c.pos, pos); });
+        if (cell) {
+            cell.hlpaths.push(enter);
+            drawcell(cell);
+        }
+    }
+    return {pos:pos, enter:enter};
+}
+
+function randwalk() {
+    var pos = {x:0, y:-1}, enter = 7;
     while (true) {
-        var curexit = path[enter];
-        var nextpos = getnextpos(curpos, curexit);
-        if (!inboard(nextpos)) {
-            going = false;
+        var cell = {pos:pos, path:randpath(), hlpaths:[enter]};
+        cells.push(cell);
+        drawcell(cell);
+        var nx = moveforward(cell, enter);
+        if (!nx) {
             break;
         }
-        var existing = _.find(cells, function(c) { return matchpos(c.pos, nextpos); });
-        if (!existing) {
-            enter = getnextenter(curexit);
-            curpos = nextpos;
-            break;
-        }
-        enter = getnextenter(curexit);
-        existing.selected.push(enter);
-        curpos = nextpos;
-        path = existing.path;
-        drawcell(curpos, path, existing.selected);
+        pos = nx.pos;
+        enter = nx.enter;
     }
 }
+
+var curcell;
+var curenter;
+
+function initgame() {
+    clearboard();
+    cells = []
+    curcell = {pos:{x:0, y:-1}, path:randpath(), hlpaths:[]};
+    curenter = 7;
+    drawcell(curcell, true);
+}
+
+function rotate(clockwise) {
+    if (!curcell) {
+        return;
+    }
+    var add = clockwise ? 2 : 10;
+    var a = _.map(curcell.path, function(x) { return (x + add) % 12; });
+    if (clockwise) {
+        a.unshift(a.pop());
+        a.unshift(a.pop());
+    } else {
+        a.push(a.shift());
+        a.push(a.shift());
+    }
+    curcell.path = a;
+    drawcell(curcell, true);
+}
+
+function nextcell() {
+    if (!curcell) {
+        return;
+    }
+    curcell.hlpaths = [curenter];
+    cells.push(curcell);
+    drawcell(curcell);
+    var nx = moveforward(curcell, curenter);
+    if (nx) {
+        curcell = {pos:nx.pos, path:randpath(), hlpaths:[]};
+        curenter = nx.enter;
+        drawcell(curcell, true);
+    } else {
+        curcell = null;
+    }
+}
+
+$('body').on('keydown', function(event) {
+  if (event.defaultPrevented) {
+    return; // Should do nothing if the key event was already consumed.
+  }
+
+  switch (event.key) {
+    case 'ArrowLeft':
+        rotate(false);
+        break;
+    case 'ArrowRight':
+        rotate(true);
+        break;
+    case 'Enter':
+        nextcell();
+        break;
+    case 'r':
+        initgame();
+        break;
+  }
+
+  event.preventDefault();
+});
 
 });
