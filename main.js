@@ -1,33 +1,78 @@
 var $ = require('jquery');
 var _ = require('underscore');
+var dateFormat = require('dateformat');
 
 $(function () {
 
-var user = firebase.auth().currentUser;
+var currentUser;
+$('#login').on('click', function() {
+    currentUser = $('#user').val();
+    if (currentUser) {
+        showhighscore();
+    }
+});
 
-if (user) {
-    $('#user').text(user.displayName);
+$(document).on('keydown', function(event) {
+  if (event.defaultPrevented) {
+    return; // Should do nothing if the key event was already consumed.
+  }
+
+  switch (event.key) {
+    case 'ArrowLeft':
+        rotate(false);
+        break;
+    case 'ArrowRight':
+        rotate(true);
+        break;
+    case 'Enter':
+        nextcell();
+        break;
+/*
+    case 'r':
+        if (!$(event.target).is('input')) {
+            initgame();
+        } else {
+            return;
+        }
+        break;
+*/
+    default:
+        return;
+  }
+  event.preventDefault();
+});
+
+$('#play').on('click', function() {
+    initgame();
+});
+
+var highscore = [];
+
+function showhighscore() {
+    $('table#userscore>tbody>tr').remove();
+    _.each(highscore,function(s) {
+        var tr = $('<tr>');
+        $('<td>').appendTo(tr).text(s.score);
+        $('<td>').appendTo(tr).text(dateFormat(s.time));
+        $('table#userscore>tbody').append(tr);
+    });
 }
 
-$('#login').on('click', function() {
-    var provider = new firebase.auth.GithubAuthProvider();
-    provider.addScope('email');
-    firebase.auth().signInWithRedirect(provider);
-});
-
-firebase.auth().getRedirectResult().then(function(result) {
-    if (result.credential) {
-        // This gives you a GitHub Access Token. You can use it to access the GitHub API.
-        //var token = result.credential.accessToken;
-        // ...
-        firebase.auth().signInWithCredential(result.credential);
+function addhighscore() {
+    var i = _.findIndex(highscore, function (s) { return score > s.score; });
+    if (i < 0) {
+        i = highscore.length;
     }
-    // The signed-in user info.
-    var user = result.user;
-    $('#user').text(user.displayName);
-}).catch(function(error) {
-    
-});
+    highscore.splice(i, 0, {score:score, time:new Date()});
+    if (highscore.length > 5) {
+        highscore.splice(5);
+    }
+    showhighscore();
+}
+
+function showscore() {
+    $('#score').text(score);
+}
 
 var cellImageCenter = 'image/center.png';
 var cellImageBorder = 'image/border.png';
@@ -168,11 +213,12 @@ _([4, 6, 8, 10, 0, 2]).each(function(dir) {
 });
 
 var cells = [];
-
+var score = 0;
 
 function moveforward(cell, enter) {
     var pos = cell.pos;
     while (cell) {
+        score += cell.hlpaths.length;
         var exit = cell.path[enter];
         pos = getnextpos(pos, exit);
         enter = getnextenter(exit);
@@ -212,6 +258,9 @@ function initgame() {
     curcell = {pos:{x:0, y:-1}, path:randpath(), hlpaths:[]};
     curenter = 7;
     drawcell(curcell, true);
+    score = 0;
+    showscore();
+    $('#play').prop('disabled', true);
 }
 
 function rotate(clockwise) {
@@ -243,32 +292,13 @@ function nextcell() {
         curcell = {pos:nx.pos, path:randpath(), hlpaths:[]};
         curenter = nx.enter;
         drawcell(curcell, true);
+        showscore();
     } else {
         curcell = null;
+        showscore();
+        addhighscore();
+        $('#play').prop('disabled', false);
     }
 }
-
-$('body').on('keydown', function(event) {
-  if (event.defaultPrevented) {
-    return; // Should do nothing if the key event was already consumed.
-  }
-
-  switch (event.key) {
-    case 'ArrowLeft':
-        rotate(false);
-        break;
-    case 'ArrowRight':
-        rotate(true);
-        break;
-    case 'Enter':
-        nextcell();
-        break;
-    case 'r':
-        initgame();
-        break;
-  }
-
-  event.preventDefault();
-});
 
 });

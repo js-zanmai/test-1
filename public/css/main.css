@@ -15,3 +15,10 @@
     height: auto;
     transform-origin: center;
 }
+
+div.userinfo {
+    position: absolute;
+    width: 400px;
+    height: 800px;
+    right: 0px;
+}

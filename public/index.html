@@ -6,12 +6,32 @@
 <link rel="stylesheet" href="./css/main.css" type="text/css" />
 </head>
 <body>
-    <p>
-        <button id="login" value="Login"></button>
-        User : <span id="user"></span>
-    </p>
-    
-    <div id="board" class="board"></div>
+<div id="userinfo" class="userinfo">
+  <p>
+    User : <input id="user" />
+    <button id="login">Login</button>
+  </p>
+  <p>
+    <button id="play">Play</button>
+  </p>
+  <p>
+    Score : <span id="score" />
+  </p>
+  <p>
+    <table id="userscore">
+      <thead>
+        <tr>
+          <th>Score</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </p>
+</div>
+
+  <div id="board" class="board"></div>
 
 <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
 <script>
