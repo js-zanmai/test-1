@@ -6,9 +6,14 @@ $(function () {
 
 var currentUser;
 $('#login').on('click', function() {
-    currentUser = $('#user').val();
-    if (currentUser) {
-        showhighscore();
+    var user = $('#user').val();
+    if (user) {
+        firebase.database().ref('/users/' + user).once('value').then(function(snapshot) {
+            var v = snapshot.val();
+            highscore = (v && v.highscore) || [];
+            showhighscore();
+            currentUser = user;
+        });
     }
 });
 
@@ -43,7 +48,9 @@ $(document).on('keydown', function(event) {
 });
 
 $('#play').on('click', function() {
-    initgame();
+    if (currentUser) {
+        initgame();
+    }
 });
 
 var highscore = [];
@@ -63,10 +70,13 @@ function addhighscore() {
     if (i < 0) {
         i = highscore.length;
     }
-    highscore.splice(i, 0, {score:score, time:new Date()});
+    highscore.splice(i, 0, {score:score, time:Date.now()});
     if (highscore.length > 5) {
         highscore.splice(5);
     }
+    firebase.database().ref('users/' + currentUser).set({
+        "highscore": highscore
+    });
     showhighscore();
 }
 
